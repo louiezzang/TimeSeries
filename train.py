@@ -56,12 +56,20 @@ def train(model: nn.Module,
     # idx ([batch_size]): one integer denoting the time series id;
     # labels_batch ([batch_size, train_window]): z_{1:T}.
     for i, (train_batch, idx, labels_batch) in enumerate(tqdm(train_loader)):
+        print(f"***** (1) train_batch: {train_batch.shape}")
+        print(f"***** (1) idx: {idx.shape}")
+        print(f"***** (1) labels_batch: {labels_batch.shape}")
+
         optimizer.zero_grad()
         batch_size = train_batch.shape[0]
 
         train_batch = train_batch.permute(1, 0, 2).to(torch.float32).to(params.device)  # not scaled
         labels_batch = labels_batch.permute(1, 0).to(torch.float32).to(params.device)  # not scaled
         idx = idx.unsqueeze(0).to(params.device)
+
+        print(f"***** (2) train_batch: {train_batch.shape}")
+        print(f"***** (2) idx: {idx.shape}")
+        print(f"***** (2) labels_batch: {labels_batch.shape}")
 
         loss = torch.zeros(1, device=params.device)
         hidden = model.init_hidden(batch_size)
