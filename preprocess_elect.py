@@ -75,6 +75,11 @@ def prep_data(data, covariates, data_start, train = True):
                 if train:
                     label[count, :] = label[count, :]/v_input[count, 0]
             count += 1
+
+    print(f"**** x_input: {x_input.shape}")
+    print(f"**** x_input: {x_input}")
+    print(f"**** label: {label.shape}")
+    print(f"**** label: {label}")
     prefix = os.path.join(save_path, 'train_' if train else 'test_')
     np.save(prefix+'data_'+save_name, x_input)
     np.save(prefix+'v_'+save_name, v_input)
@@ -125,6 +130,9 @@ if __name__ == '__main__':
     data_frame = pd.read_csv(csv_path, sep=";", index_col=0, parse_dates=True, decimal=',')
     data_frame = data_frame.resample('1H',label = 'left',closed = 'right').sum()[train_start:test_end]
     data_frame.fillna(0, inplace=True)
+    print(f"**** data_frame: {data_frame.shape}")
+    print(f"**** data_frame: {data_frame}")
+
     covariates = gen_covariates(data_frame[train_start:test_end].index, num_covariates)
     train_data = data_frame[train_start:train_end].values
     test_data = data_frame[test_start:test_end].values
