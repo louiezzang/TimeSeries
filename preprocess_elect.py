@@ -63,15 +63,15 @@ def prep_data(data, covariates, data_start, train = True):
             print("d: ", data[window_start:window_end-1, series].shape)
             '''
             x_input[count, 1:, 0] = data[window_start:window_end-1, series]
-            print(f"***** window_start:window_end-1, series = {window_start}:{window_end-1}, {series}")
-            print(f"***** x_input[count, 1:, 0] = {x_input.shape}")
+            # print(f"***** window_start:window_end-1, series = {window_start}:{window_end-1}, {series}")
+            # print(f"***** x_input[count, 1:, 0] = {x_input.shape}")
             x_input[count, :, 1:1+num_covariates] = covariates[window_start:window_end, :]
-            print(f"***** x_input[count, :, 1:1+num_covariates] = {x_input.shape}")
+            # print(f"***** x_input[count, :, 1:1+num_covariates] = {x_input.shape}")
             x_input[count, :, -1] = series
-            print(f"***** x_input[count, :, -1] = {x_input.shape}")
+            # print(f"***** x_input[count, :, -1] = {x_input.shape}")
             label[count, :] = data[window_start:window_end, series]
-            print(f"***** window_start:window_end, series = {window_start}:{window_end}, {series}")
-            print(f"***** label[count, :] = {label.shape}")
+            # print(f"***** window_start:window_end, series = {window_start}:{window_end}, {series}")
+            # print(f"***** label[count, :] = {label.shape}")
             nonzero_sum = (x_input[count, 1:input_size, 0]!=0).sum()
             if nonzero_sum == 0:
                 v_input[count, 0] = 0
@@ -79,12 +79,13 @@ def prep_data(data, covariates, data_start, train = True):
                 v_input[count, 0] = np.true_divide(x_input[count, 1:input_size, 0].sum(),nonzero_sum)+1
                 x_input[count, :, 0] = x_input[count, :, 0]/v_input[count, 0]
 
-                print(f"********* x_input[count, :, 0] = {x_input.shape}")
+                # print(f"********* x_input[count, :, 0] = {x_input.shape}")
                 if train:
                     label[count, :] = label[count, :]/v_input[count, 0]
-                    print(f"******** label[count, :] = {label.shape}")
+                    # print(f"******** label[count, :] = {label.shape}")
             count += 1
 
+    print(f"**** v_input: {x_input.shape}, {v_input}")
     print(f"**** x_input: {x_input.shape}")
     # print(f"**** x_input: {x_input}")
     print(f"**** label: {label.shape}")
