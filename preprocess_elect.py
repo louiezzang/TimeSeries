@@ -28,16 +28,27 @@ def prep_data(data, covariates, data_start, train = True):
     #print("time_len: ", time_len)
     input_size = window_size-stride_size
     windows_per_series = np.full((num_series), (time_len-input_size) // stride_size)
-    #print("windows pre: ", windows_per_series.shape)
+    print("time_len: ", time_len)
+    print("window_size: ", window_size)
+    print("stride_size: ", stride_size)
+    print("(time_len-(window_size-stride_size)) // stride_size: ", (time_len-input_size) // stride_size)
+    print("windows_per_series: ", windows_per_series.shape)
     if train: windows_per_series -= (data_start+stride_size-1) // stride_size
-    #print("data_start: ", data_start.shape)
-    #print(data_start)
-    #print("windows: ", windows_per_series.shape)
-    #print(windows_per_series)
+    print("data_start: ", data_start.shape)
+    print(data_start)
+    print("windows_per_series: ", windows_per_series.shape)
+    print(windows_per_series)
     total_windows = np.sum(windows_per_series)
+    print("total_windows: ", total_windows)
+
     x_input = np.zeros((total_windows, window_size, 1 + num_covariates + 1), dtype='float32')
     label = np.zeros((total_windows, window_size), dtype='float32')
     v_input = np.zeros((total_windows, 2), dtype='float32')
+
+    print("(1) x_input: ", x_input.shape)
+    print("(1) label: ", label.shape)
+    print("(1) v_input: ", v_input.shape)
+    
     #cov = 3: ground truth + age + day_of_week + hour_of_day + num_series
     #cov = 4: ground truth + age + day_of_week + hour_of_day + month_of_year + num_series
     count = 0
@@ -55,13 +66,16 @@ def prep_data(data, covariates, data_start, train = True):
             else:
                 window_start = stride_size*i
             window_end = window_start+window_size
-            '''
-            print("x: ", x_input[count, 1:, 0].shape)
-            print("window start: ", window_start)
-            print("window end: ", window_end)
-            print("data: ", data.shape)
-            print("d: ", data[window_start:window_end-1, series].shape)
-            '''
+            
+            if not train and series == 0:
+                print("-" * 10)
+                print("for series =", series, ", windows =", i)
+                # print("x: ", x_input[count, 1:, 0].shape)
+                print("window start: ", window_start, ", window end: ", window_end)
+                # print("data: ", data.shape)
+                # print("d: ", data[window_start:window_end-1, series].shape)
+                print("-" * 10)
+            
             x_input[count, 1:, 0] = data[window_start:window_end-1, series]
             # print(f"***** window_start:window_end-1, series = {window_start}:{window_end-1}, {series}")
             # print(f"***** x_input[count, 1:, 0] = {x_input.shape}")
@@ -85,7 +99,7 @@ def prep_data(data, covariates, data_start, train = True):
                     # print(f"******** label[count, :] = {label.shape}")
             count += 1
 
-    print(f"**** v_input: {x_input.shape}, {v_input}")
+    print(f"**** v_input: {v_input.shape}, {v_input}")
     print(f"**** x_input: {x_input.shape}")
     # print(f"**** x_input: {x_input}")
     print(f"**** label: {label.shape}")
@@ -138,16 +152,21 @@ if __name__ == '__main__':
                 zfile.extractall(save_path)
 
     data_frame = pd.read_csv(csv_path, sep=";", index_col=0, parse_dates=True, decimal=',')
-    data_frame = data_frame.resample('1H',label = 'left',closed = 'right').sum()[train_start:test_end]
+    data_frame = data_frame.resample('1H', label='left', closed='right').sum()[train_start:test_end]
     data_frame.fillna(0, inplace=True)
     print(f"**** data_frame: {data_frame.shape}")
     # print(f"**** data_frame: {data_frame}")
 
     covariates = gen_covariates(data_frame[train_start:test_end].index, num_covariates)
+    print(f"**** covariates: {covariates.shape}")
     train_data = data_frame[train_start:train_end].values
     test_data = data_frame[test_start:test_end].values
-    data_start = (train_data!=0).argmax(axis=0) #find first nonzero value in each time series
-    total_time = data_frame.shape[0] #32304
-    num_series = data_frame.shape[1] #370
+    data_start = (train_data!=0).argmax(axis=0) # find first nonzero value in each time series
+    total_time = data_frame.shape[0] # 32304
+    num_series = data_frame.shape[1] # 370
+    print(f"**** num_series: {num_series}")
+
+    print("#" * 20, "train data", "#" * 20)
     prep_data(train_data, covariates, data_start)
+    print("#" * 10, "test data", "#" * 10)
     prep_data(test_data, covariates, data_start, train=False)
