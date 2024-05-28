@@ -11,4 +11,8 @@ nohup.out
 *.npy
 *.csv
 
+
 data/
+experiments/base_model/*.log
+experiments/base_model/**.tar
+experiments/base_model/epoch_**.tar

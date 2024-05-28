@@ -56,9 +56,9 @@ def train(model: nn.Module,
     # idx ([batch_size]): one integer denoting the time series id;
     # labels_batch ([batch_size, train_window]): z_{1:T}.
     for i, (train_batch, idx, labels_batch) in enumerate(tqdm(train_loader)):
-        print(f"***** (1) train_batch: {train_batch.shape}")
-        print(f"***** (1) idx: {idx.shape}")
-        print(f"***** (1) labels_batch: {labels_batch.shape}")
+        # print(f"***** (1) train_batch: {train_batch.shape}")
+        # print(f"***** (1) idx: {idx.shape}")
+        # print(f"***** (1) labels_batch: {labels_batch.shape}")
 
         optimizer.zero_grad()
         batch_size = train_batch.shape[0]
@@ -67,9 +67,14 @@ def train(model: nn.Module,
         labels_batch = labels_batch.permute(1, 0).to(torch.float32).to(params.device)  # not scaled
         idx = idx.unsqueeze(0).to(params.device)
 
-        print(f"***** (2) train_batch: {train_batch.shape}")
-        print(f"***** (2) idx: {idx.shape}")
-        print(f"***** (2) labels_batch: {labels_batch.shape}")
+        train_batch_x = train_batch[:, :, 1:]
+        train_batch_z = train_batch[:, :, 0:1]
+
+        # print(f"***** (2) train_batch: {train_batch.shape}")
+        # print(f"***** (2) idx: {idx.shape}")
+        # print(f"***** (2) labels_batch: {labels_batch.shape}")
+        # print(f"***** (2) train_batch_x: {train_batch_x.shape}")
+        # print(f"***** (2) train_batch_z: {train_batch_z.shape}")
 
         loss = torch.zeros(1, device=params.device)
         hidden = model.init_hidden(batch_size)
@@ -77,10 +82,12 @@ def train(model: nn.Module,
 
         for t in range(params.train_window):
             # if z_t is missing, replace it by output mu from the last time step
-            zero_index = (train_batch[t, :, 0] == 0)
+            zero_index = (train_batch_z[t, :, 0] == 0) # zero_index = (train_batch[t, :, 0] == 0)
+            # print(f"zero_index: {zero_index}")
             if t > 0 and torch.sum(zero_index) > 0:
-                train_batch[t, zero_index, 0] = mu[zero_index]
-            mu, sigma, hidden, cell = model(train_batch[t].unsqueeze_(0).clone(), idx, hidden, cell)
+                train_batch_z[t, zero_index, 0] = mu[zero_index] # train_batch[t, zero_index, 0] = mu[zero_index]
+            # mu, sigma, hidden, cell = model(train_batch[t].unsqueeze_(0).clone(), idx, hidden, cell)
+            mu, sigma, hidden, cell = model(train_batch_x[t].unsqueeze_(0).clone(), train_batch_z[t].unsqueeze_(0).clone(), idx, hidden, cell)
             loss += loss_fn(mu, sigma, labels_batch[t])
 
         loss.backward()

@@ -77,8 +77,8 @@ def prep_data(data, covariates, data_start, train = True):
                 print("-" * 10)
             
             x_input[count, 1:, 0] = data[window_start:window_end-1, series]
-            # print(f"***** window_start:window_end-1, series = {window_start}:{window_end-1}, {series}")
-            # print(f"***** x_input[count, 1:, 0] = {x_input.shape}")
+            if not train and series == 0:
+                print(f"***** x_input[count, 1:, 0] = {x_input.shape}")
             x_input[count, :, 1:1+num_covariates] = covariates[window_start:window_end, :]
             # print(f"***** x_input[count, :, 1:1+num_covariates] = {x_input.shape}")
             x_input[count, :, -1] = series
@@ -90,8 +90,14 @@ def prep_data(data, covariates, data_start, train = True):
             if nonzero_sum == 0:
                 v_input[count, 0] = 0
             else:
+                # if not train:
+                #     print(f"x_input[{count}, 1:{input_size}, 0].sum()={x_input[count, 1:input_size, 0].sum()}, nonzero_sum={nonzero_sum}")
+                #     print(f"np.true_divide(x_input[{count}, 1:{input_size}, 0].sum(),nonzero_sum)+1={np.true_divide(x_input[count, 1:input_size, 0].sum(),nonzero_sum)+1}")
                 v_input[count, 0] = np.true_divide(x_input[count, 1:input_size, 0].sum(),nonzero_sum)+1
                 x_input[count, :, 0] = x_input[count, :, 0]/v_input[count, 0]
+
+                if not train:
+                    print(f"v_input[{count}, 0] = {v_input[count][0]}")
 
                 # print(f"********* x_input[count, :, 0] = {x_input.shape}")
                 if train:

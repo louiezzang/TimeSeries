@@ -45,7 +45,7 @@ class Net(nn.Module):
         self.distribution_presigma = nn.Linear(params.lstm_hidden_dim * params.lstm_layers, 1)
         self.distribution_sigma = nn.Softplus()
 
-    def forward(self, x, idx, hidden, cell):
+    def forward(self, x, z, idx, hidden, cell):
         '''
         Predict mu and sigma of the distribution for z_t.
         Args:
@@ -59,8 +59,10 @@ class Net(nn.Module):
             hidden ([lstm_layers, batch_size, lstm_hidden_dim]): LSTM h from time step t
             cell ([lstm_layers, batch_size, lstm_hidden_dim]): LSTM c from time step t
         '''
+        # print("x:", x.shape)
         onehot_embed = self.embedding(idx) #TODO: is it possible to do this only once per window instead of per step?
-        lstm_input = torch.cat((x, onehot_embed), dim=2)
+        # print("onehot_embed:", onehot_embed.shape)
+        lstm_input = torch.cat((z, x, onehot_embed), dim=2)
         output, (hidden, cell) = self.lstm(lstm_input, (hidden, cell))
         # use h from all three layers to calculate mu and sigma
         hidden_permute = hidden.permute(1, 2, 0).contiguous().view(hidden.shape[1], -1)
@@ -75,7 +77,7 @@ class Net(nn.Module):
     def init_cell(self, input_size):
         return torch.zeros(self.params.lstm_layers, input_size, self.params.lstm_hidden_dim, device=self.params.device)
 
-    def test(self, x, v_batch, id_batch, hidden, cell, sampling=False):
+    def test(self, x, z, v_batch, id_batch, hidden, cell, sampling=False):
         batch_size = x.shape[1]
         if sampling:
             samples = torch.zeros(self.params.sample_times, batch_size, self.params.predict_steps,
@@ -85,12 +87,13 @@ class Net(nn.Module):
                 decoder_cell = cell
                 for t in range(self.params.predict_steps):
                     mu_de, sigma_de, decoder_hidden, decoder_cell = self(x[self.params.predict_start + t].unsqueeze(0),
+                                                                         z[self.params.predict_start + t].unsqueeze(0),
                                                                          id_batch, decoder_hidden, decoder_cell)
                     gaussian = torch.distributions.normal.Normal(mu_de, sigma_de)
                     pred = gaussian.sample()  # not scaled
                     samples[j, :, t] = pred * v_batch[:, 0] + v_batch[:, 1]
                     if t < (self.params.predict_steps - 1):
-                        x[self.params.predict_start + t + 1, :, 0] = pred
+                        z[self.params.predict_start + t + 1, :, 0] = pred
 
             sample_mu = torch.median(samples, dim=0)[0]
             sample_sigma = samples.std(dim=0)
@@ -103,11 +106,12 @@ class Net(nn.Module):
             sample_sigma = torch.zeros(batch_size, self.params.predict_steps, device=self.params.device)
             for t in range(self.params.predict_steps):
                 mu_de, sigma_de, decoder_hidden, decoder_cell = self(x[self.params.predict_start + t].unsqueeze(0),
+                                                                     z[self.params.predict_start + t].unsqueeze(0),
                                                                      id_batch, decoder_hidden, decoder_cell)
                 sample_mu[:, t] = mu_de * v_batch[:, 0] + v_batch[:, 1]
                 sample_sigma[:, t] = sigma_de * v_batch[:, 0]
                 if t < (self.params.predict_steps - 1):
-                    x[self.params.predict_start + t + 1, :, 0] = mu_de
+                    z[self.params.predict_start + t + 1, :, 0] = mu_de
             return sample_mu, sample_sigma
 
 
