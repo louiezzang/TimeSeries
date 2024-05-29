@@ -96,8 +96,8 @@ def prep_data(data, covariates, data_start, train = True):
                 v_input[count, 0] = np.true_divide(x_input[count, 1:input_size, 0].sum(),nonzero_sum)+1
                 x_input[count, :, 0] = x_input[count, :, 0]/v_input[count, 0]
 
-                if not train:
-                    print(f"v_input[{count}, 0] = {v_input[count][0]}")
+                # if not train:
+                #     print(f"v_input[{count}, 0] = {v_input[count][0]}")
 
                 # print(f"********* x_input[count, :, 0] = {x_input.shape}")
                 if train:
